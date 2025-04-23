@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learnify - Dashboard</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --baby-blue: #89CFF0;
+            --baby-blue-light: #B5E2FA;
+            --baby-blue-dark: #6CB4D9;
+            --white: #FFFFFF;
+            --light-gray: #F5F7FA;
+            --dark-gray: #4A4A4A;
+            --sidebar-width: 250px;
+            --header-height: 70px;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100%;
+            background-color: var(--white);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            transition: all 0.3s;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sidebar-header h2 {
+            color: var(--baby-blue);
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            color: var(--dark-gray);
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background-color: var(--baby-blue-light);
+            border-left-color: var(--baby-blue);
+        }
+
+        .menu-item.active {
+            background-color: var(--baby-blue-light);
+            border-left-color: var(--baby-blue);
+            font-weight: 600;
+        }
+
+        .menu-item i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logout-btn {
+            background-color: var(--baby-blue);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--baby-blue-dark);
+        }
+
+        /* Main content area */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* Header styles */
+        .header {
+            height: var(--header-height);
+            background-color: var(--white);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            color: var(--dark-gray);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--baby-blue);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .user-level {
+            font-size: 0.8rem;
+            color: var(--baby-blue);
+        }
+
+        /* Dashboard content */
+        .dashboard-container {
+            padding: 30px;
+        }
+
+        .dashboard-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            margin-bottom: 20px;
+            color: var(--dark-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-all {
+            color: var(--baby-blue);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        /* Cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Feature card */
+        .feature-card {
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            color: var(--dark-gray);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .feature-card i {
+            font-size: 2.5rem;
+            color: var(--baby-blue);
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Activity card */
+        .activity-card {
+            padding: 20px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .activity-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--baby-blue-light);
+            color: var(--baby-blue-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--baby-blue);
+            margin-bottom: 10px;
+        }
+
+        .stat-title {
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Progress section */
+        .progress-container {
+            padding: 20px;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-bar-container {
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--baby-blue);
+            border-radius: 4px;
+        }
+
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .progress-level {
+            color: var(--dark-gray);
+            font-weight: 600;
+        }
+
+        .progress-points {
+            color: #999;
+        }
+
+        /* Mobile hamburger menu */
+        .mobile-menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            color: var(--dark-gray);
+            cursor: pointer;
+        }
+
+        /* Responsive design */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-container {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Learnify</h2>
+        </div>
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
+            <a href="FlashCards.html" class="menu-item">
+                <i class="fas fa-sticky-note"></i>
+                Flashcards
+            </a>
+            <a href="Quizzes.html" class="menu-item">
+                <i class="fas fa-question-circle"></i>
+                Quizzes
+            </a>
+            <a href="upload.html" class="menu-item">
+                <i class="fas fa-file-pdf"></i>
+                PDF Upload
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-gamepad"></i>
+                Learning Games
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-chart-line"></i>
+                Progress
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-cog"></i>
+                Settings
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <button id="logout-btn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="mobile-menu-toggle" id="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <h2 class="page-title">Dashboard</h2>
+            <div class="user-profile" id="user-profile">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div>
+                    <div class="user-name" id="user-name">User Name</div>
+                    <div class="user-level">Level <span id="user-level">1</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard content -->
+        <div class="dashboard-container">
+            <!-- Stats section -->
+            <div class="dashboard-section">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-number" id="flashcards-count">0</div>
+                        <div class="stat-title">Flashcards Created</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="quizzes-count">0</div>
+                        <div class="stat-title">Quizzes Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="streak-count">0</div>
+                        <div class="stat-title">Day Streak</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="points-count">0</div>
+                        <div class="stat-title">Total Points</div>
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- Progress section -->
+            <div class="dashboard-section">
+                <h2 class="section-title">Your Level Progress</h2>
+                <div class="progress-container">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="level-progress-bar" style="width: 35%;"></div>
+                    </div>
+                    <div class="progress-details">
+                        <div class="progress-level">Level <span id="progress-level">1</span></div>
+                        <div class="progress-points"><span id="current-points">350</span>/<span id="next-level-points">1000</span> points</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Access Features -->
+            <div class="dashboard-section">
+                <h2 class="section-title">Quick Access</h2>
+                <div class="cards-grid">
+                    <a href="#" class="card feature-card">
+                        <i class="fas fa-plus-circle"></i>
+                        <h3>Create Flashcards</h3>
+                        <p>Build your own digital flashcard deck</p>
+                    </a>
+                    <a href="#" class="card feature-card">
+                        <i class="fas fa-file-upload"></i>
+                        <h3>Upload PDF</h3>
+                        <p>Generate study materials from PDFs</p>
+                    </a>
+                    <a href="#" class="card feature-card">
+                        <i class="fas fa-brain"></i>
+                        <h3>Take a Quiz</h3>
+                        <p>Test your knowledge with AI quizzes</p>
+                    </a>
+                    <a href="#" class="card feature-card">
+                        <i class="fas fa-gamepad"></i>
+                        <h3>Learning Games</h3>
+                        <p>Play games to reinforce learning</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-section">
+                <div class="section-title">
+                    <h2>Recent Activity</h2>
+                    <a href="#" class="view-all">View All</a>
+                </div>
+                <div class="card activity-card">
+                    <div id="activity-container">
+                        <!-- Activity items will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyATAe3TZwta-QKXKQVW9GRe_Qw5AUMoUTg",
+            authDomain: "learnify-59f57.firebaseapp.com",
+            projectId: "learnify-59f57",
+            storageBucket: "learnify-59f57.firebasestorage.app",
+            messagingSenderId: "357474953732",
+            appId: "1:357474953732:web:d3b2b1f6941bb93842a351",
+            measurementId: "G-GMXTZ3LP0Q"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html'; // Redirect to login page
+            }).catch((error) => {
+                console.error('Error signing out:', error);
+            });
+        });
+
+        // Sample activity data - replace with real data from Firestore
+        const sampleActivities = [
+            {
+                type: 'flashcard',
+                title: 'Created "Biology 101" Flashcard Deck',
+                time: '2 hours ago',
+                icon: 'fas fa-sticky-note'
+            },
+            {
+                type: 'quiz',
+                title: 'Completed "Chemistry Basics" Quiz - 90%',
+                time: 'Yesterday',
+                icon: 'fas fa-question-circle'
+            },
+            {
+                type: 'pdf',
+                title: 'Uploaded "Physics Chapter 5" PDF',
+                time: '2 days ago',
+                icon: 'fas fa-file-pdf'
+            },
+            {
+                type: 'level',
+                title: 'Reached Level 2!',
+                time: '3 days ago',
+                icon: 'fas fa-level-up-alt'
+            }
+        ];
+
+        // Populate activity items
+        function populateActivities(activities) {
+            const activityContainer = document.getElementById('activity-container');
+            activityContainer.innerHTML = '';
+
+            if (activities.length === 0) {
+                activityContainer.innerHTML = '<p style="text-align: center; padding: 20px;">No recent activity yet.</p>';
+                return;
+            }
+
+            activities.forEach(activity => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.innerHTML = `
+                    <div class="activity-icon">
+                        <i class="${activity.icon}"></i>
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                `;
+                activityContainer.appendChild(activityItem);
+            });
+        }
+
+        // Check if user is logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is logged in
+                // Get user data from Firestore
+                db.collection('users').doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        // Set user info
+                        document.getElementById('user-name').textContent = userData.name || user.displayName || user.email;
+                        document.getElementById('user-level').textContent = userData.level || 1;
+                        document.getElementById('progress-level').textContent = userData.level || 1;
+                        
+                        // Set avatar with user's initials
+                        const userName = userData.name || user.displayName || user.email;
+                        const initials = userName.split(' ').map(name => name[0]).join('').toUpperCase();
+                        document.getElementById('user-avatar').textContent = initials;
+                        
+                        // Set points and progress
+                        const points = userData.points || 0;
+                        const currentLevel = userData.level || 1;
+                        const pointsForNextLevel = currentLevel * 1000; // Example formula
+                        const progressPercentage = Math.min((points / pointsForNextLevel) * 100, 100);
+                        
+                        document.getElementById('points-count').textContent = points;
+                        document.getElementById('current-points').textContent = points;
+                        document.getElementById('next-level-points').textContent = pointsForNextLevel;
+                        document.getElementById('level-progress-bar').style.width = `${progressPercentage}%`;
+                        
+                        // Fetch and set other stats (example)
+                        document.getElementById('flashcards-count').textContent = userData.flashcardsCreated || 0;
+                        document.getElementById('quizzes-count').textContent = userData.quizzesCompleted || 0;
+                        document.getElementById('streak-count').textContent = userData.dayStreak || 0;
+                    }
+                }).catch((error) => {
+                    console.error("Error getting user data:", error);
+                });
+                
+                // Fetch real activities (replace with actual query)
+                // For now, use sample data
+                populateActivities(sampleActivities);
+                
+            } else {
+                // User is not logged in, redirect to login page
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+<script src="dashboard.js"></script>
+<script src="upload.js"></script>
+</body>
+</html>

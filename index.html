@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learnify - Login/Signup</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --baby-blue: #89CFF0;
+            --baby-blue-light: #B5E2FA;
+            --baby-blue-dark: #6CB4D9;
+            --white: #FFFFFF;
+            --light-gray: #F5F7FA;
+            --dark-gray: #4A4A4A;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .image-section {
+            flex: 1;
+            background-color: var(--baby-blue);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--white);
+        }
+
+        .image-section img {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .image-section h2 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .image-section p {
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .form-section {
+            flex: 1;
+            background-color: var(--white);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-container {
+            width: 100%;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--baby-blue);
+            border-bottom: 3px solid var(--baby-blue);
+        }
+
+        .form {
+            display: none;
+        }
+
+        .form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark-gray);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--baby-blue);
+            box-shadow: 0 0 0 3px rgba(137, 207, 240, 0.3);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 25px;
+        }
+
+        .forgot-password a {
+            color: var(--baby-blue);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--baby-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--baby-blue-dark);
+        }
+
+        .social-login {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .social-login p {
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .social-login p::before,
+        .social-login p::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background-color: #ddd;
+        }
+
+        .social-login p::before {
+            left: 0;
+        }
+
+        .social-login p::after {
+            right: 0;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .social-icon:hover {
+            background-color: var(--baby-blue-light);
+            border-color: var(--baby-blue);
+        }
+
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--baby-blue);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Phone number input styles */
+        #phone-container {
+            display: none;
+        }
+        
+        /* User info display */
+        #logged-in-container {
+            display: none;
+            text-align: center;
+        }
+        
+        #logged-in-container h3 {
+            margin-bottom: 15px;
+            color: var(--dark-gray);
+        }
+        
+        #user-email {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--baby-blue);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+                max-width: 400px;
+            }
+
+            .image-section {
+                padding: 30px;
+            }
+
+            .form-section {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-section">
+            <h2>Learnify</h2>
+            <p>Your AI-powered learning companion. Create flashcards, generate quizzes from PDFs, and engage with gamified learning.</p>
+        </div>
+        <div class="form-section">
+            <div class="form-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="showTab('login')">Login</button>
+                    <button class="tab-btn" onclick="showTab('signup')">Sign Up</button>
+                </div>
+
+                <div id="login-alert" class="alert"></div>
+                <div id="signup-alert" class="alert"></div>
+
+                <!-- Already logged in container -->
+                <div id="logged-in-container" class="form">
+                    <h3>You are already logged in as:</h3>
+                    <p id="user-email"></p>
+                    <button id="go-to-dashboard-btn" class="submit-btn">Go to Dashboard</button>
+                    <button id="logout-btn" class="submit-btn" style="margin-top: 15px; background-color: #f8d7da; color: #721c24;">Logout</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="form active">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="forgot-password">
+                        <a href="#" id="forgot-password-link">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="submit-btn">Login</button>
+                    <div id="login-loading" class="loading">
+                        <div class="loading-spinner"></div> Logging in...
+                    </div>
+
+                    <div class="social-login">
+                        <p>Or login with</p>
+                        <div class="social-icons">
+                            <div class="social-icon" id="google-login">G</div>
+                            <div class="social-icon" id="phone-login">📱</div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Phone Login Container -->
+                <div id="phone-container" class="form">
+                    <div class="form-group">
+                        <label for="phone-number">Phone Number</label>
+                        <input type="tel" id="phone-number" placeholder="+1 (555) 555-5555" required>
+                    </div>
+                    <button id="send-code-btn" class="submit-btn">Send Code</button>
+                    
+                    <div id="verification-container" style="display: none; margin-top: 20px;">
+                        <div class="form-group">
+                            <label for="verification-code">Verification Code</label>
+                            <input type="text" id="verification-code" placeholder="Enter 6-digit code" required>
+                        </div>
+                        <button id="verify-code-btn" class="submit-btn">Verify Code</button>
+                    </div>
+                    
+                    <div class="social-login" style="margin-top: 20px;">
+                        <a href="#" id="back-to-login" style="color: var(--baby-blue);">Back to Login</a>
+                    </div>
+                </div>
+
+                <!-- Signup Form -->
+                <form id="signup-form" class="form">
+                    <div class="form-group">
+                        <label for="signup-name">Full Name</label>
+                        <input type="text" id="signup-name" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Enter your password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm">Confirm Password</label>
+                        <input type="password" id="signup-confirm" placeholder="Confirm your password" required minlength="6">
+                    </div>
+                    <button type="submit" class="submit-btn">Sign Up</button>
+                    <div id="signup-loading" class="loading">
+                        <div class="loading-spinner"></div> Creating account...
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyATAe3TZwta-QKXKQVW9GRe_Qw5AUMoUTg",
+            authDomain: "learnify-59f57.firebaseapp.com",
+            projectId: "learnify-59f57",
+            storageBucket: "learnify-59f57.firebasestorage.app",
+            messagingSenderId: "357474953732",
+            appId: "1:357474953732:web:d3b2b1f6941bb93842a351",
+            measurementId: "G-GMXTZ3LP0Q"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Show/hide tabs
+        function showTab(tabName) {
+            // Hide all forms and alerts
+            document.querySelectorAll('.form').forEach(form => {
+                form.classList.remove('active');
+            });
+            document.querySelectorAll('.alert').forEach(alert => {
+                alert.style.display = 'none';
+            });
+            
+            // Hide phone container
+            document.getElementById('phone-container').style.display = 'none';
+            
+            // Show selected form
+            document.getElementById(tabName + '-form').classList.add('active');
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Find the button that was clicked and make it active
+            event.currentTarget.classList.add('active');
+        }
+
+        // Show alert message
+        function showAlert(formType, message, isError = false) {
+            const alertElement = document.getElementById(formType + '-alert');
+            alertElement.textContent = message;
+            alertElement.className = 'alert ' + (isError ? 'alert-error' : 'alert-success');
+            alertElement.style.display = 'block';
+        }
+
+        // Show/hide loading spinner
+        function toggleLoading(formType, show) {
+            document.getElementById(formType + '-loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Email and Password Login
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            toggleLoading('login', true);
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Login successful
+                    showAlert('login', 'Login successful! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html'; // Redirect to dashboard
+                    }, 1500);
+                })
+                .catch((error) => {
+                    // Login failed
+                    toggleLoading('login', false);
+                    showAlert('login', error.message, true);
+                });
+        });
+
+        // Email and Password Signup
+        document.getElementById('signup-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm').value;
+            
+            // Check if passwords match
+            if (password !== confirmPassword) {
+                showAlert('signup', 'Passwords do not match!', true);
+                return;
+            }
+            
+            toggleLoading('signup', true);
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signup successful
+                    const user = userCredential.user;
+                    
+                    // Update user profile with display name
+                    return user.updateProfile({
+                        displayName: name
+                    }).then(() => {
+                        // Create user document in Firestore
+                        return db.collection('users').doc(user.uid).set({
+                            name: name,
+                            email: email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            points: 0,
+                            level: 1
+                        });
+                    }).then(() => {
+                        showAlert('signup', 'Account created successfully! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html'; // Redirect to dashboard
+                        }, 1500);
+                    });
+                })
+                .catch((error) => {
+                    // Signup failed
+                    toggleLoading('signup', false);
+                    showAlert('signup', error.message, true);
+                });
+        });
+
+        // Google Sign-in
+        document.getElementById('google-login').addEventListener('click', function() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    // Check if this is a new user
+                    const isNewUser = result.additionalUserInfo.isNewUser;
+                    const user = result.user;
+                    
+                    // If new user, create a Firestore profile
+                    if (isNewUser) {
+                        return db.collection('users').doc(user.uid).set({
+                            name: user.displayName,
+                            email: user.email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            points: 0,
+                            level: 1
+                        }).then(() => {
+                            window.location.href = 'dashboard.html';
+                        });
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                })
+                .catch((error) => {
+                    showAlert('login', error.message, true);
+                });
+        });
+
+        // Phone Number Login
+        document.getElementById('phone-login').addEventListener('click', function() {
+            // Hide login form and show phone container
+            document.getElementById('login-form').classList.remove('active');
+            document.getElementById('phone-container').style.display = 'block';
+        });
+
+        // Back to Login
+        document.getElementById('back-to-login').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('phone-container').style.display = 'none';
+            document.getElementById('login-form').classList.add('active');
+        });
+
+        // Send verification code
+        document.getElementById('send-code-btn').addEventListener('click', function() {
+            const phoneNumber = document.getElementById('phone-number').value;
+            
+            if (!phoneNumber) {
+                showAlert('login', 'Please enter a valid phone number', true);
+                return;
+            }
+            
+            // Set up reCAPTCHA verifier (optional, but recommended)
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('send-code-btn', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    // reCAPTCHA solved, allow signInWithPhoneNumber.
+                }
+            });
+            
+            const appVerifier = window.recaptchaVerifier;
+            
+            auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+                .then((confirmationResult) => {
+                    // SMS sent. Prompt user to type the code.
+                    window.confirmationResult = confirmationResult;
+                    document.getElementById('verification-container').style.display = 'block';
+                    showAlert('login', 'Verification code sent to your phone!');
+                })
+                .catch((error) => {
+                    showAlert('login', error.message, true);
+                    // Reset reCAPTCHA
+                    grecaptcha.reset(window.recaptchaWidgetId);
+                });
+        });
+
+        // Verify the code
+        document.getElementById('verify-code-btn').addEventListener('click', function() {
+            const code = document.getElementById('verification-code').value;
+            
+            if (!code) {
+                showAlert('login', 'Please enter the verification code', true);
+                return;
+            }
+            
+            window.confirmationResult.confirm(code)
+                .then((result) => {
+                    // User signed in successfully
+                    const user = result.user;
+                    
+                    // Check if this is a new user
+                    if (result.additionalUserInfo.isNewUser) {
+                        // Create a Firestore profile
+                        return db.collection('users').doc(user.uid).set({
+                            name: user.phoneNumber, // Use phone number as name initially
+                            phoneNumber: user.phoneNumber,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            points: 0,
+                            level: 1
+                        }).then(() => {
+                            window.location.href = 'dashboard.html';
+                        });
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                })
+                .catch((error) => {
+                    showAlert('login', error.message, true);
+                });
+        });
+
+        // Password Reset
+        document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            
+            if (!email) {
+                showAlert('login', 'Please enter your email address first', true);
+                return;
+            }
+            
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    showAlert('login', 'Password reset email sent. Check your inbox.');
+                })
+                .catch((error) => {
+                    showAlert('login', error.message, true);
+                });
+        });
+
+        // Go to Dashboard
+        document.getElementById('go-to-dashboard-btn').addEventListener('click', function() {
+            window.location.href = 'dashboard.html';
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            auth.signOut().then(() => {
+                // Hide logged in container
+                document.getElementById('logged-in-container').style.display = 'none';
+                // Show login form
+                document.getElementById('login-form').classList.add('active');
+                // Show login tab as active
+                document.querySelectorAll('.tab-btn').forEach((btn, index) => {
+                    btn.classList.toggle('active', index === 0);
+                });
+                showAlert('login', 'You have been logged out successfully.');
+            }).catch((error) => {
+                showAlert('login', error.message, true);
+            });
+        });
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Get URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                // Check if there's a 'action=logout' parameter
+                const action = urlParams.get('action');
+                
+                if (action === 'logout') {
+                    // If action is logout, sign out the user
+                    auth.signOut().then(() => {
+                        // Show login form
+                        document.getElementById('login-form').classList.add('active');
+                        document.getElementById('logged-in-container').style.display = 'none';
+                        // Remove the parameter from URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    });
+                } else {
+                    // User is logged in, show logged in container instead of login form
+                    document.querySelectorAll('.form').forEach(form => {
+                        form.classList.remove('active');
+                    });
+                    document.getElementById('logged-in-container').style.display = 'block';
+                    document.getElementById('user-email').textContent = user.email || user.phoneNumber;
+                }
+            } else {
+                // User is not logged in, show login form
+                document.getElementById('logged-in-container').style.display = 'none';
+                document.getElementById('login-form').classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>
