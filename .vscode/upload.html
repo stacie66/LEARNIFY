@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Upload - Learnify</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* General styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        :root {
+            --baby-blue: #89CFF0;
+            --baby-blue-light: #B5E2FA;
+            --baby-blue-dark: #6CB4D9;
+            --white: #FFFFFF;
+            --light-gray: #F5F7FA;
+            --dark-gray: #4A4A4A;
+            --sidebar-width: 250px;
+            --header-height: 70px;
+        }
+        body {
+            background-color: var(--light-gray);
+            display: flex;
+            height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--white);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            padding-top: 20px;
+        }
+        .sidebar h2 {
+            text-align: center;
+            color: var(--baby-blue);
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            text-decoration: none;
+            color: var(--dark-gray);
+        }
+        .menu-item:hover, .menu-item.active {
+            background-color: var(--baby-blue-light);
+        }
+        .menu-item i {
+            margin-right: 15px;
+        }
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            padding: 30px;
+        }
+        .header {
+            height: var(--header-height);
+            background: var(--white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .upload-section {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border: 2px dashed var(--baby-blue);
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-btn {
+            background: var(--baby-blue);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .upload-btn:hover {
+            background: var(--baby-blue-dark);
+        }
+        .pdf-list {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        .pdf-list h2 {
+            margin-bottom: 15px;
+        }
+        .pdf-list ul {
+            list-style: none;
+        }
+        .pdf-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .pdf-actions {
+            display: flex;
+        }
+        .pdf-actions a, .pdf-actions button {
+            margin-left: 10px;
+            background: var(--baby-blue);
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .pdf-actions button {
+            background: #ff6b6b;
+        }
+        .message-area {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        /* User info styles */
+        .user-info {
+            margin-bottom: 15px;
+            color: var(--dark-gray);
+        }
+        .auth-section {
+            display: flex;
+            align-items: center;
+        }
+        .auth-section p {
+            margin-right: 15px;
+        }
+        #logout-btn, #login-btn {
+            background: var(--baby-blue);
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        /* Selected file display */
+        #selected-file {
+            margin-top: 10px;
+            color: var(--dark-gray);
+            font-style: italic;
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Learnify</h2>
+        <a href="index.html" class="menu-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="upload.html" class="menu-item active"><i class="fas fa-file-pdf"></i> PDF Upload</a>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>PDF Upload</h2>
+            <div class="auth-section">
+                <p id="auth-status">Checking authentication...</p>
+                <button id="logout-btn" style="display: none;">Logout</button>
+                <button id="login-btn" style="display: none;">Login</button>
+            </div>
+        </div>
+        <div class="upload-section">
+            <h2>Upload Your Study Materials</h2>
+            <div id="user-info" class="user-info"></div>
+            <label for="pdf-file" class="file-input-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                Click to select or drag & drop a PDF
+            </label>
+            <input type="file" id="pdf-file" class="file-input" accept=".pdf">
+            <div id="selected-file">No file selected</div>
+            <button id="upload-btn" class="upload-btn">Upload PDF</button>
+            <div id="message-area" class="message-area"></div>
+        </div>
+        <div class="pdf-list">
+            <h2>Your Uploaded PDFs</h2>
+            <ul id="pdfs-container"></ul>
+        </div>
+    </div>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyATAe3TZwta-QKXKQVW9GRe_Qw5AUMoUTg",
+            authDomain: "learnify-59f57.firebaseapp.com",
+            projectId: "learnify-59f57",
+            storageBucket: "learnify-59f57.firebasestorage.app",
+            messagingSenderId: "357474953732",
+            appId: "1:357474953732:web:d3b2b1f6941bb93842a351",
+            measurementId: "G-GMXTZ3LP0Q"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Handle authentication state
+        firebase.auth().onAuthStateChanged((user) => {
+            const authStatus = document.getElementById('auth-status');
+            const logoutBtn = document.getElementById('logout-btn');
+            const loginBtn = document.getElementById('login-btn');
+            
+            if (user) {
+                // User is signed in
+                authStatus.textContent = `Logged in as: ${user.email || user.phoneNumber || user.displayName || user.uid}`;
+                logoutBtn.style.display = 'inline-block';
+                loginBtn.style.display = 'none';
+            } else {
+                // User is not signed in
+                authStatus.textContent = 'You are not logged in';
+                logoutBtn.style.display = 'none';
+                loginBtn.style.display = 'inline-block';
+            }
+        });
+        
+        // Show selected file name
+        document.getElementById('pdf-file').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+            document.getElementById('selected-file').textContent = fileName;
+        });
+        
+        // Logout function
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            firebase.auth().signOut()
+                .then(() => {
+                    const messageArea = document.getElementById('message-area');
+                    messageArea.textContent = 'You have been logged out';
+                    messageArea.className = 'message-area success';
+                    messageArea.style.display = 'block';
+                })
+                .catch((error) => {
+                    const messageArea = document.getElementById('message-area');
+                    messageArea.textContent = `Logout error: ${error.message}`;
+                    messageArea.className = 'message-area error';
+                    messageArea.style.display = 'block';
+                });
+        });
+        
+        // Go to login page
+        document.getElementById('login-btn').addEventListener('click', () => {
+            window.location.href = 'index.html'; // Assuming your login page is index.html
+        });
+    </script>
+    
+    <script src="upload.js"></script>
+</body>
+</html>

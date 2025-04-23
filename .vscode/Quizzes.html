@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Quiz</title>
+    <style>
+        /* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f7fa;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header styles */
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+#deck-info {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+#deck-name {
+    font-size: 1.5rem;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+}
+
+#progress {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+/* Quiz container styles */
+#quiz-container {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#loading-message {
+    color: #7f8c8d;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+/* Card styles */
+.card {
+    width: 100%;
+    height: 250px;
+    perspective: 1000px;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.card-side {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.6s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.card-front {
+    background-color: #3498db;
+    color: white;
+    z-index: 2;
+}
+
+.card-front.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-back {
+    background-color: #2ecc71;
+    color: white;
+    transform: rotateY(180deg);
+    z-index: 1;
+}
+
+.card-back.flipped {
+    transform: rotateY(0deg);
+    z-index: 3;
+}
+
+.card-side p {
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: 500;
+    padding: 1rem;
+}
+
+/* Button styles */
+.btn {
+    padding: 0.8rem 1.5rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+    margin: 0.5rem;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn:hover {
+    background-color: #2980b9;
+}
+
+.btn-success {
+    background-color: #2ecc71;
+}
+
+.btn-success:hover {
+    background-color: #27ae60;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+#card-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#answer-buttons {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Quiz results styles */
+#quiz-results {
+    text-align: center;
+    width: 100%;
+}
+
+#quiz-results h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.results-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.results-score {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+#score-percent {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.results-chart {
+    height: 30px;
+    display: flex;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.bar {
+    height: 100%;
+    transition: width 1s ease-in-out;
+}
+
+.correct-bar {
+    background-color: #2ecc71;
+    width: 0;
+}
+
+.incorrect-bar {
+    background-color: #e74c3c;
+    width: 0;
+}
+
+.action-buttons {
+    margin-top: 1.5rem;
+}
+
+/* Utility classes */
+.hidden {
+    display: none !important;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    #quiz-container {
+        padding: 1.5rem;
+    }
+    
+    .card {
+        height: 200px;
+    }
+    
+    .card-side p {
+        font-size: 1.2rem;
+    }
+    
+    .btn {
+        padding: 0.7rem 1.2rem;
+    }
+    
+    #answer-buttons {
+        flex-direction: column;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quizzes</h1>
+            <div id="deck-info">
+                <h2 id="deck-name">Loading deck...</h2>
+                <p id="progress">Card <span id="current-card">0</span> of <span id="total-cards">0</span></p>
+            </div>
+        </header>
+
+        <main id="quiz-container">
+            <div id="loading-message">Loading quiz cards...</div>
+            
+            <div id="quiz-content" class="hidden">
+                <div id="card" class="card">
+                    <div id="card-front" class="card-side card-front">
+                        <p id="question"></p>
+                    </div>
+                    <div id="card-back" class="card-side card-back hidden">
+                        <p id="answer"></p>
+                    </div>
+                </div>
+
+                <div id="card-controls">
+                    <button id="flip-btn" class="btn">Flip Card</button>
+                    <div id="answer-buttons" class="hidden">
+                        <button id="correct-btn" class="btn btn-success">I Got It Right</button>
+                        <button id="incorrect-btn" class="btn btn-danger">I Got It Wrong</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="quiz-results" class="hidden">
+                <h2>Quiz Complete!</h2>
+                <div class="results-container">
+                    <div class="results-score">
+                        <p>Your Score: <span id="score-percent">0</span>%</p>
+                        <p><span id="correct-count">0</span> correct out of <span id="total-count">0</span> cards</p>
+                    </div>
+                    <div id="results-chart" class="results-chart">
+                        <div id="correct-bar" class="bar correct-bar"></div>
+                        <div id="incorrect-bar" class="bar incorrect-bar"></div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button id="retry-btn" class="btn">Retry Quiz</button>
+                    <a href="index.html" class="btn">Back to Decks</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /**
+ * Quiz functionality for flashcard app
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM elements
+        const deckNameElement = document.getElementById('deck-name');
+        const currentCardElement = document.getElementById('current-card');
+        const totalCardsElement = document.getElementById('total-cards');
+        const questionElement = document.getElementById('question');
+        const answerElement = document.getElementById('answer');
+        const cardFrontElement = document.getElementById('card-front');
+        const cardBackElement = document.getElementById('card-back');
+        const loadingMessage = document.getElementById('loading-message');
+        const quizContent = document.getElementById('quiz-content');
+        const quizResults = document.getElementById('quiz-results');
+        const flipButton = document.getElementById('flip-btn');
+        const answerButtons = document.getElementById('answer-buttons');
+        const correctButton = document.getElementById('correct-btn');
+        const incorrectButton = document.getElementById('incorrect-btn');
+        const retryButton = document.getElementById('retry-btn');
+        const scorePercentElement = document.getElementById('score-percent');
+        const correctCountElement = document.getElementById('correct-count');
+        const totalCountElement = document.getElementById('total-count');
+        const correctBar = document.getElementById('correct-bar');
+        const incorrectBar = document.getElementById('incorrect-bar');
+
+        let cards = [];
+        let currentCardIndex = 0;
+        let deckId = '';
+        let isFlipped = false;
+        let userQuizResults = [];
+
+        initQuiz();
+
+    /**
+     * Initialize the quiz by fetching deck data from URL params
+     */
+    function initQuiz() {
+        // Get deck ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        deckId = urlParams.get('deckId');
+
+        if (!deckId) {
+            showError('No deck ID provided');
+            return;
+        }
+
+        // Fetch quiz data
+        fetchQuizData();
+    }
+
+    /**
+     * Fetch quiz data from the server
+     */
+    function fetchQuizData() {
+        fetch(`/api/quiz/${deckId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch quiz data');
+                }
+                return response.json();
+            })
+            .then(data => {
+                setupQuiz(data);
+            })
+            .catch(error => {
+                showError(error.message);
+            });
+    }
+
+    /**
+     * Setup quiz with fetched data
+     */
+    function setupQuiz(data) {
+        deckNameElement.textContent = data.deckName;
+        cards = data.cards;
+        
+        if (cards.length === 0) {
+            showError('No cards found in this deck');
+            return;
+        }
+        
+        totalCardsElement.textContent = cards.length;
+        quizResults = Array(cards.length).fill(null);
+        
+        // Show quiz content
+        loadingMessage.classList.add('hidden');
+        quizContent.classList.remove('hidden');
+        
+        // Start with first card
+        showCard(0);
+    }
+
+    /**
+     * Show a specific card
+     * @param {number} index - Card index to show
+     */
+    function showCard(index) {
+        if (index < 0 || index >= cards.length) {
+            return;
+        }
+
+        const card = cards[index];
+        currentCardIndex = index;
+        
+        // Update card content
+        questionElement.textContent = card.front;
+        answerElement.textContent = card.back;
+        
+        // Update progress
+        currentCardElement.textContent = index + 1;
+        
+        // Reset card flip state
+        resetCardFlip();
+    }
+
+    /**
+     * Reset card flip state
+     */
+    function resetCardFlip() {
+        isFlipped = false;
+        cardFrontElement.classList.remove('flipped');
+        cardBackElement.classList.remove('flipped');
+        cardBackElement.classList.add('hidden');
+        answerButtons.classList.add('hidden');
+        flipButton.classList.remove('hidden');
+    }
+
+    /**
+     * Flip card to show answer
+     */
+    function flipCard() {
+        isFlipped = !isFlipped;
+        
+        if (isFlipped) {
+            cardFrontElement.classList.add('flipped');
+            cardBackElement.classList.remove('hidden');
+            setTimeout(() => {
+                cardBackElement.classList.add('flipped');
+                flipButton.classList.add('hidden');
+                answerButtons.classList.remove('hidden');
+            }, 150);
+        } else {
+            cardBackElement.classList.remove('flipped');
+            setTimeout(() => {
+                cardBackElement.classList.add('hidden');
+                cardFrontElement.classList.remove('flipped');
+                answerButtons.classList.add('hidden');
+                flipButton.classList.remove('hidden');
+            }, 150);
+        }
+    }
+
+    /**
+     * Record user's answer and move to next card
+     * @param {boolean} correct - Whether the answer was correct
+     */
+    function recordAnswer(correct) {
+        const currentCard = cards[currentCardIndex];
+        
+        // Store result
+        quizResults[currentCardIndex] = {
+            cardId: currentCard.id,
+            correct: correct
+        };
+        
+        // Move to next card or finish quiz
+        if (currentCardIndex < cards.length - 1) {
+            showCard(currentCardIndex + 1);
+        } else {
+            finishQuiz();
+        }
+    }
+
+    /**
+     * Submit quiz results and show summary
+     */
+    function finishQuiz() {
+        // Hide quiz content
+        quizContent.classList.add('hidden');
+        
+        // Calculate results
+        const totalCards = quizResults.length;
+        const correctAnswers = quizResults.filter(result => result && result.correct).length;
+        const scorePercent = Math.round((correctAnswers / totalCards) * 100);
+        
+        // Update results UI
+        scorePercentElement.textContent = scorePercent;
+        correctCountElement.textContent = correctAnswers;
+        totalCountElement.textContent = totalCards;
+        
+        // Update results chart
+        correctBar.style.width = `${scorePercent}%`;
+        incorrectBar.style.width = `${100 - scorePercent}%`;
+        
+        // Show results
+        quizResults.classList.remove('hidden');
+        
+        // Submit results to server
+        submitQuizResults();
+    }
+
+    /**
+     * Send quiz results to server
+     */
+    function submitQuizResults() {
+        fetch(`/api/quiz/${deckId}/submit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                results: quizResults.filter(result => result !== null)
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Failed to submit quiz results');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Quiz results submitted successfully', data);
+        })
+        .catch(error => {
+            console.error('Error submitting quiz results:', error);
+        });
+    }
+
+    /**
+     * Show error message
+     * @param {string} message - Error message to display
+     */
+    function showError(message) {
+        loadingMessage.textContent = `Error: ${message}`;
+        loadingMessage.style.color = '#e74c3c';
+    }
+
+    // Event listeners
+    flipButton.addEventListener('click', flipCard);
+    
+    correctButton.addEventListener('click', () => {
+        recordAnswer(true);
+    });
+    
+    incorrectButton.addEventListener('click', () => {
+        recordAnswer(false);
+    });
+    
+    retryButton.addEventListener('click', () => {
+        // Reset quiz state
+        currentCardIndex = 0;
+        quizResults = Array(cards.length).fill(null);
+        
+        // Hide results and show quiz content
+        quizResults.classList.add('hidden');
+        quizContent.classList.remove('hidden');
+        
+        // Show first card
+        showCard(0);
+    });
+});
+    </script>
+</body>
+</html>
